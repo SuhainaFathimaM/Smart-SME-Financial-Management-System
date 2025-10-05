@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Smart SME Financial Management Dashboard</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <style>
+      :root {
+        --primary: #2962ff;
+        --bg: rgb(222, 230, 248);
+        --active: #b6f6fd;
+        --danger: #ef5350;
+        --success: #43a047;
+        --radius: 10px;
+      }
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        margin: 0;
+        background: var(--bg);
+      }
+      header {
+        background: var(--primary);
+        color: #fff;
+        padding: 20px 30px;
+      }
+      header h1 {
+        margin: 0 0 4px;
+        font-size: 1.6em;
+      }
+      header small {
+        color: #eee;
+      }
+      .main {
+        max-width: 1180px;
+        margin: 32px auto 0 auto;
+        background: #fff;
+        border-radius: var(--radius);
+        box-shadow: 0 3px 10px #0002;
+      }
+      nav {
+        display: flex;
+        background: #e1f0fd;
+        border-radius: var(--radius) var(--radius) 0 0;
+      }
+      nav button {
+        flex: 1;
+        border: none;
+        background: none;
+        padding: 20px 0;
+        font-size: 1.01em;
+        font-weight: bold;
+        color: #2962ff;
+        letter-spacing: 1px;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        outline: none;
+      }
+      nav button.active,
+      nav button:focus {
+        background: var(--active);
+        border-bottom: 3px solid var(--primary);
+      }
+      section {
+        display: none;
+        padding: 36px 40px 28px 40px;
+      }
+      section.active {
+        display: block;
+      }
+      .dashboard {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .stat,
+      .chart,
+      .alertbox {
+        flex: 1 1 260px;
+        min-width: 250px;
+        background: #f6f9fc;
+        margin-bottom: 18px;
+        border-radius: var(--radius);
+        padding: 17px 17px 8px 17px;
+        box-sizing: border-box;
+      }
+      .stat h2 {
+        margin: 0 0 3px;
+        font-size: 1em;
+        color: #909;
+      }
+      .stat span {
+        font-size: 2.1em;
+        color: var(--primary);
+      }
+      .chart h2 {
+        font-size: 1em;
+        margin: 0 0 6px;
+        color: #606;
+      }
+      .chart canvas {
+        margin-top: 6px;
+      }
+      .alert {
+        background: var(--danger);
+        color: #fff;
+        border-radius: 5px;
+        padding: 7px 12px 7px 10px;
+        margin-bottom: 7px;
+        font-size: 0.97em;
+      }
+      .alert.success {
+        background: var(--success);
+      }
+      .flexrow {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .input-section {
+        background: #eef4fa;
+        border-radius: var(--radius);
+        padding: 14px 24px 14px 20px;
+        margin-bottom: 25px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .input-section input,
+      .input-section select {
+        padding: 9px;
+        font-size: 1em;
+        border: 1px solid #b0bec5;
+        border-radius: var(--radius);
+        width: 170px;
+      }
+      .input-section button {
+        color: #fff;
+        background: var(--primary);
+        border: none;
+        border-radius: var(--radius);
+        padding: 9px 19px;
+        font-size: 1em;
+        cursor: pointer;
+      }
+      .input-section button:hover {
+        background: #1c44b2;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+      th,
+      td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 1em;
+      }
+      th {
+        background: #ecf6ff;
+      }
+      .categorized {
+        font-size: 0.87em;
+        border-radius: 6px;
+        padding: 2px 7px;
+        color: #fff;
+      }
+      .cat-ops {
+        background: #ffa5f8;
+      }
+      .cat-exp {
+        background: #ff8a65;
+      }
+      .cat-fin {
+        background: #42a5f5;
+      }
+      .cat-oth {
+        background: #ab47bc;
+      }
+      .out {
+        color: #f00;
+        font-weight: bold;
+      }
+      .in {
+        color: #279628;
+        font-weight: bold;
+      }
+      .pending {
+        color: var(--danger);
+        font-weight: bold;
+      }
+      .paid {
+        color: var(--success);
+        font-weight: bold;
+      }
+      .btn {
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        padding: 4px 14px;
+        background: var(--primary);
+        color: #fff;
+      }
+      @media (max-width: 850px) {
+        .main {
+          margin: 0;
+          border-radius: 0;
+        }
+        section {
+          padding: 22px 8px 22px 8px;
+        }
+        .dashboard {
+          flex-direction: column;
+          gap: 15px;
+        }
+        .flexrow {
+          flex-direction: column;
+          gap: 10px;
+        }
+        nav button {
+          padding: 14px 0;
+        }
+      }
+      .expbar {
+        margin-top: 18px;
+      }
+       .cat-ope {
+        background: #d1adee;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Smart SME Financial Management System</h1>
+      <small>AI-Driven Cash Flow, Automated Invoicing, UPI Analytics</small>
+    </header>
+    <div class="main">
+      <nav>
+        <button class="active" data-tab="dashboard">Dashboard</button>
+        <button data-tab="transactions">Transactions</button>
+        <button data-tab="invoices">Invoices</button>
+        <button data-tab="backup">Data Export/Import</button>
+      </nav>
+      <!-- Dashboard -->
+      <section id="dashboard" class="active">
+        <div class="dashboard">
+          <div class="stat">
+            <h2>Cash on Hand</h2>
+            <span id="cashOnHand">₹0</span>
+          </div>
+          <div class="stat">
+            <h2>Receivables</h2>
+            <span id="receivables">₹0</span>
+          </div>
+          <div class="stat">
+            <h2>This Month's Spend</h2>
+            <span id="expensed">₹0</span>
+          </div>
+          <div class="stat">
+            <h2>Invoices Paid</h2>
+            <span id="paidCount">0</span>
+          </div>
+          <div class="chart">
+            <h2>Cash Flow Forecast (Next 7d)</h2>
+            <canvas id="cashChart" height="80"></canvas>
+          </div>
+          <div class="alertbox" id="alerts">
+            <!-- alerts render here -->
+          </div>
+        </div>
+        <div class="flexrow">
+          <div style="flex: 2">
+            <h3>Expense Categorization (<span id="expBarTitle"></span>)</h3>
+            <table id="expTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Item/Payee</th>
+                  <th>IN/OUT</th>
+                  <th>Amount</th>
+                  <th>Category</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div style="flex: 1; min-width: 225px">
+            <h3>Expenses Breakdown</h3>
+            <div id="expbar" class="expbar"></div>
+          </div>
+        </div>
+      </section>
+      <!-- Transactions -->
+      <section id="transactions">
+        <h2>Add Transaction</h2>
+        <form class="input-section" id="txnForm">
+          <input type="date" id="txnDate" required />
+          <input type="text" id="txnName" placeholder="Item/Vendor" required />
+          <select id="txnType">
+            <option value="IN">IN</option>
+            <option value="OUT">OUT</option>
+          </select>
+          <input
+            type="number"
+            id="txnAmount"
+            placeholder="Amount"
+            required
+            min="1"
+          />
+          <button type="submit">Add</button>
+        </form>
+        <h3>Latest Transactions</h3>
+        <table id="txnTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Name</th>
+              <th>IN/OUT</th>
+              <th>Amount</th>
+              <th>Category</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+      <!-- Invoices -->
+      <section id="invoices">
+        <h2>Add Invoice</h2>
+        <form class="input-section" id="invForm">
+          <input type="date" id="invDate" required />
+          <input
+            type="text"
+            id="invClient"
+            placeholder="Client/Supplier"
+            required
+          />
+          <input
+            type="number"
+            id="invAmount"
+            placeholder="Amount"
+            required
+            min="1"
+          />
+          <select id="invStatus">
+            <option value="Pending">Pending</option>
+            <option value="Paid">Paid</option>
+          </select>
+          <button type="submit">Add</button>
+        </form>
+        <h3>Invoice Tracker</h3>
+        <table id="invTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Client/Supplier</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+      <!-- Backup and Restore -->
+      <section id="backup">
+        <h2>Data Export &amp; Import</h2>
+        <button class="btn" onclick="exportData()">Export as JSON</button>
+        <input type="file" id="importFile" accept=".json" />
+        <div style="margin-top: 18px; color: #666">
+          Download your data for demo portability, or restore previous state.<br />Note:
+          All data is client-browser only. No info leaves your device.
+        </div>
+      </section>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      // ==== Data Model ====
+      let txns = [
+        { date: today(-6), name: "UPI: Rent", type: "OUT", amount: 12000 },
+        { date: today(-6), name: "Sales: Amazon", type: "IN", amount: 53000 },
+        {
+          date: today(-5),
+          name: "UPI: Internet Bill",
+          type: "OUT",
+          amount: 1800,
+        },
+        {
+          date: today(-4),
+          name: "UPI: CRM Subscription",
+          type: "OUT",
+          amount: 1500,
+        },
+        { date: today(-3), name: "Bank Transfer", type: "IN", amount: 37000 },
+        { date: today(-2), name: "Office Supplies", type: "OUT", amount: 2000 },
+        {
+          date: today(-1),
+          name: "Immediate Payment - ZYX",
+          type: "OUT",
+          amount: 9000,
+        },
+      ];
+      let invoices = [
+        {
+          date: today(-8),
+          client: "Bhavani Traders",
+          amount: 50000,
+          status: "Pending",
+        },
+        {
+          date: today(-6),
+          client: "ABC Vendor",
+          amount: 2300,
+          status: "Pending",
+        },
+        {
+          date: today(-5),
+          client: "Quick Logistics",
+          amount: 15000,
+          status: "Paid",
+        },
+      ];
+
+      // ==== Utilities ====
+      function today(offset = 0) {
+        const d = new Date();
+        d.setDate(d.getDate() + offset);
+        return d.toISOString().split("T")[0];
+      }
+      function saveState() {
+        localStorage.setItem(
+          "_smeapp_data",
+          JSON.stringify({ txns, invoices })
+        );
+      }
+      function loadState() {
+        let d = localStorage.getItem("_smeapp_data");
+        if (d) {
+          try {
+            d = JSON.parse(d);
+            if (d.txns && d.invoices) {
+              txns = d.txns;
+              invoices = d.invoices;
+            }
+          } catch (e) {}
+        }
+      }
+      loadState();
+
+      // ==== Categorization ====
+      function categorize(item, type) {
+        if (type == "OUT") {
+          if (/rent|salary/i.test(item)) return "Operating";
+          if (/bill|subscription|internet|crm|supplies/i.test(item))
+            return "Expense";
+          if (/loan|emi|interest/i.test(item)) return "Finance";
+          return "Other";
+        } else {
+          if (/sale|amazon|customer|payment|transfer/i.test(item))
+            return "Operating";
+          if (/capital|loan/i.test(item)) return "Finance";
+          return "Other";
+        }
+      }
+
+      // ==== App Logic + UI ====
+
+      function updateDashboard() {
+        // Calculate cash, expenses, paid invoices
+        let cash = txns.reduce(
+          (t, x) => t + (x.type === "IN" ? x.amount : -x.amount),
+          0
+        );
+        let out = txns.filter((x) => x.type === "OUT");
+        let expensed = out.reduce((t, x) => t + x.amount, 0);
+        let paidCount = invoices.filter((x) => x.status === "Paid").length;
+        document.getElementById(
+          "cashOnHand"
+        ).textContent = `₹${cash.toLocaleString()}`;
+        document.getElementById(
+          "expensed"
+        ).textContent = `₹${expensed.toLocaleString()}`;
+        document.getElementById("paidCount").textContent = paidCount;
+        // Receivables
+        let rec = invoices
+          .filter((x) => x.status === "Pending")
+          .reduce((t, x) => t + x.amount, 0);
+        document.getElementById(
+          "receivables"
+        ).textContent = `₹${rec.toLocaleString()}`;
+        // Alerts
+        let aldiv = document.getElementById("alerts");
+        aldiv.innerHTML = "";
+        if (rec > 0)
+          aldiv.innerHTML += `<div class="alert">Alert: Pending receivables of ₹${rec.toLocaleString()}</div>`;
+        let late = txns.filter(
+          (x) =>
+            x.type === "OUT" &&
+            x.amount > 8000 &&
+            Date.now() - new Date(x.date) < 3 * 864e5
+        )[0];
+        if (late)
+          aldiv.innerHTML += `<div class="alert">⚠️ Major outgoing: ₹${late.amount.toLocaleString()} (${
+            late.name
+          })</div>`;
+        if (paidCount)
+          aldiv.innerHTML += `<div class="alert success">+${paidCount} paid invoices this month</div>`;
+        if (!aldiv.innerHTML)
+          aldiv.innerHTML = `<div class="alert success">✔️ All clear. No alerts.</div>`;
+        // Expense bar
+        showExpenseBreakdown();
+      }
+
+      function showExpenseBreakdown() {
+        // Breakdown of OUT txns last 14d
+        let cats = { Operating: 0, Expense: 0, Finance: 0, Other: 0 };
+        txns
+          .filter((x) => x.type === "OUT")
+          .forEach((x) => {
+            cats[categorize(x.name, "OUT")] += x.amount;
+          });
+        let maxv = Math.max(...Object.values(cats));
+        let html = "";
+        Object.entries(cats).forEach(([c, v]) => {
+          html += `<div style="margin-bottom:6px;">
+        <span class="categorized cat-${c
+          .slice(0, 3)
+          .toLowerCase()}" style="width:85px;display:inline-block">${c}</span>
+        <span style="display:inline-block; width:${Math.max(
+          4,
+          (v / maxv) * 130
+        )}px; height:16px; background:#b1dbfa; border-radius:9px; margin:0 10px;"></span>
+        <span>₹${v.toLocaleString()}</span></div>`;
+        });
+        document.getElementById("expbar").innerHTML = html;
+        document.getElementById("expBarTitle").innerText = "Last 14 Days";
+      }
+
+      // Forecast chart
+      function drawChart() {
+        const ctx = document.getElementById("cashChart").getContext("2d");
+        let history = [];
+        let bal = txns.reduce(
+          (t, x) => t + (x.type === "IN" ? x.amount : -x.amount),
+          0
+        );
+        let histTxns = txns.slice(-14).reverse();
+        for (let i = 13; i >= 0; i--) {
+          // last 14 days
+          let b = 0;
+          histTxns
+            .filter((x) => daysdiff(x.date, today()) === -i)
+            .forEach((x) => {
+              b += x.type === "IN" ? x.amount : -x.amount;
+            });
+          if (i === 13) history.push(bal);
+          else history.push(history[history.length - 1] + b);
+        }
+        // forecast by avg daily gain/loss ± random
+        let avg = (history[0] - history[history.length - 1]) / 14;
+        let forecast = [history[0]];
+        for (let i = 1; i <= 7; i++) {
+          let rand = Math.round((Math.random() - 0.5) * 0.35 * avg);
+          forecast[i] = forecast[i - 1] + avg + rand;
+        }
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: ["Now", "+1d", "+2d", "+3d", "+4d", "+5d", "+6d", "+7d"],
+            datasets: [
+              {
+                label: "Forecast",
+                data: forecast,
+                borderColor: "#2962ff",
+                backgroundColor: "rgba(41,98,255,0.09)",
+                fill: true,
+                tension: 0.22,
+              },
+            ],
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } },
+          },
+        });
+      }
+
+      function daysdiff(d1, d2) {
+        return Math.floor((new Date(d1) - new Date(d2)) / (24 * 3600 * 1000));
+      }
+
+      // Render transaction tables
+      function renderTxns() {
+        let tBody = document.querySelector("#txnTable tbody");
+        let eBody = document.querySelector("#expTable tbody");
+        tBody.innerHTML = eBody.innerHTML = "";
+        txns.forEach((txn, idx) => {
+          let cat = categorize(txn.name, txn.type);
+          let badge = `<span class="categorized cat-${cat
+            .toLowerCase()
+            .slice(0, 3)}">${cat}</span>`;
+          let row = `<tr>
+          <td>${txn.date}</td>
+          <td>${txn.name}</td>
+          <td><span class="${txn.type == "IN" ? "in" : "out"}">${
+            txn.type
+          }</span></td>
+          <td>₹${txn.amount.toLocaleString()}</td>
+          <td>${badge}</td>
+          <td><button class="btn" onclick="delTxn(${idx})">Delete</button></td>
+        </tr>`;
+          tBody.innerHTML += row;
+          // Last 10 for expense tab
+          if (idx < 10) eBody.innerHTML += row;
+        });
+      }
+      function delTxn(idx) {
+        txns.splice(idx, 1);
+        saveState();
+        renderAll();
+      }
+
+      // Render invoices
+      function renderInvoices() {
+        let tBody = document.querySelector("#invTable tbody");
+        tBody.innerHTML = "";
+        invoices.forEach((inv, idx) => {
+          let statClass = inv.status === "Paid" ? "paid" : "pending";
+          let row = `<tr>
+          <td>${inv.date}</td>
+          <td>${inv.client}</td>
+          <td>₹${inv.amount.toLocaleString()}</td>
+          <td><span class="${statClass}">${inv.status}</span></td>
+          <td>
+            ${
+              inv.status === "Pending"
+                ? '<button class="btn" onclick="markPaid(' +
+                  idx +
+                  ')">Mark Paid</button>'
+                : ""
+            }
+            <button class="btn" onclick="delInv('+idx+')">Delete</button>
+          </td>
+        </tr>`;
+          tBody.innerHTML += row;
+        });
+      }
+      function markPaid(idx) {
+        invoices[idx].status = "Paid";
+        saveState();
+        renderAll();
+      }
+      function delInv(idx) {
+        invoices.splice(idx, 1);
+        saveState();
+        renderAll();
+      }
+
+      // === App Interactivity ===
+      // Nav
+      document.querySelectorAll("nav button").forEach((btn) => {
+        btn.onclick = () => {
+          document
+            .querySelectorAll("nav button")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          document
+            .querySelectorAll("section")
+            .forEach((s) => s.classList.remove("active"));
+          document.getElementById(btn.dataset.tab).classList.add("active");
+          if (btn.dataset.tab == "dashboard") drawChart();
+        };
+      });
+      // Transaction add
+      document.getElementById("txnForm").onsubmit = (e) => {
+        e.preventDefault();
+        const date = txnDate.value || today();
+        const name = txnName.value;
+        const type = txnType.value;
+        const amount = Number(txnAmount.value);
+        txns.unshift({ date, name, type, amount });
+        saveState();
+        renderAll();
+        e.target.reset();
+      };
+      // Invoice add
+      document.getElementById("invForm").onsubmit = (e) => {
+        e.preventDefault();
+        const date = invDate.value || today();
+        const client = invClient.value;
+        const amount = Number(invAmount.value);
+        const status = invStatus.value;
+        invoices.unshift({ date, client, amount, status });
+        saveState();
+        renderAll();
+        e.target.reset();
+      };
+
+      // Export Import
+      function exportData() {
+        let data = JSON.stringify({ txns, invoices });
+        let blob = new Blob([data], { type: "application/json" });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement("a");
+        a.href = url;
+        a.download = "sme_data.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      document
+        .getElementById("importFile")
+        .addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (!file) return;
+          const r = new FileReader();
+          r.onload = function (ev) {
+            try {
+              let d = JSON.parse(ev.target.result);
+              if (Array.isArray(d.txns) && Array.isArray(d.invoices)) {
+                txns = d.txns;
+                invoices = d.invoices;
+                saveState();
+                renderAll();
+                alert("Data Imported Successfully!");
+              } else throw "bad";
+            } catch (err) {
+              alert("Import failed. Check file format.");
+            }
+          };
+          r.readAsText(file);
+          e.target.value = "";
+        });
+
+      // Draw all
+      function renderAll() {
+        renderTxns();
+        renderInvoices();
+        updateDashboard();
+        drawChart();
+      }
+      // Initial render
+      renderAll();
+    </script>
+  </body>
+</html>
